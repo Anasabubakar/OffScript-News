@@ -457,6 +457,7 @@ export default function ReaderPreview({ brief, onDeploy, isDeploying, onShareWha
 
 // Subcomponent SegmentCard
 interface SegmentCardProps {
+  key?: any;
   segment: EditorialSegment;
   isEditing: boolean;
   onEdit: (field: keyof EditorialSegment, value: string) => void;
