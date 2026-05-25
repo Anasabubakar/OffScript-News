@@ -193,128 +193,109 @@ export default function ReaderPreview({ brief, onDeploy, isDeploying, onShareWha
 
         {/* Big Story Segment */}
         {brief.segments.bigStory && (
-          <div className="space-y-5 pt-2">
-            <div className="flex items-center gap-3">
-              <span className="bg-[#B19470]/10 text-[#8C6239] border border-[#B19470]/20 text-[9px] font-bold px-3 py-0.5 rounded-full uppercase tracking-widest">
-                TODAY'S MAIN ARTICLE
+          <div className="py-6 sm:py-8 border-b border-stone-150 space-y-5">
+            <div className="flex items-center gap-2">
+              <span className="bg-[#B19470]/10 text-[#8C6239] border border-[#B19470]/20 text-[9px] font-extrabold px-3 py-1 rounded-full uppercase tracking-widest">
+                THE BIG STORY
               </span>
-              <div className="h-[1px] bg-stone-100 flex-1"></div>
+              <div className="h-[1px] bg-stone-200/60 flex-1"></div>
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-4">
               {isEditing ? (
                 <input
                   type="text"
                   value={brief.segments.bigStory.title || ''}
                   onChange={(e) => updateBigStory('title', e.target.value)}
-                  className="text-xl sm:text-2xl font-bold font-serif text-stone-950 bg-amber-50/20 border-b border-dashed border-amber-250 focus:border-amber-400 focus:outline-none p-1.5 w-full rounded"
+                  className="text-2xl sm:text-3xl font-extrabold font-serif text-slate-900 bg-amber-50/20 border-b border-dashed border-amber-250 focus:border-amber-400 focus:outline-none p-1.5 w-full rounded focus:bg-white leading-tight"
                   placeholder="Main Story Title..."
                 />
               ) : (
-                <h2 className="text-xl sm:text-2xl font-bold font-serif text-slate-900 tracking-tight leading-snug">
-                  🔥 {brief.segments.bigStory.title}
+                <h2 className="text-2xl sm:text-3xl font-extrabold font-serif text-slate-950 tracking-tight leading-tight hover:text-[#8C6239] transition-colors animate-none" id="big-story-headline">
+                  {brief.segments.bigStory.title}
                 </h2>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
-                {/* News & Significance column */}
-                <div className="space-y-5">
-                  <div className="space-y-1.5">
-                    <h4 className="text-[10px] font-bold uppercase text-[#8C6239] tracking-widest block border-l-2 border-[#B19470] pl-2">
-                      THE STORY
-                    </h4>
-                    {isEditing ? (
-                      <textarea
-                        value={brief.segments.bigStory.whatHappened || ''}
-                        onChange={(e) => updateBigStory('whatHappened', e.target.value)}
-                        className="text-stone-700 leading-relaxed text-xs sm:text-sm font-medium bg-amber-50/20 border border-dashed border-amber-250 focus:border-amber-400 focus:outline-none p-2 w-full rounded focus:bg-white h-28 resize-none"
-                        placeholder="What happened news fact details..."
-                      />
-                    ) : (
-                      <p className="text-slate-650 leading-relaxed text-xs sm:text-sm font-medium">
-                        {brief.segments.bigStory.whatHappened}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <h4 className="text-[10px] font-bold uppercase text-[#8C6239] tracking-widest block border-l-2 border-[#B19470] pl-2">
-                      WHY IT MATTERS
-                    </h4>
-                    {isEditing ? (
-                      <textarea
-                        value={brief.segments.bigStory.whyItMatters || ''}
-                        onChange={(e) => updateBigStory('whyItMatters', e.target.value)}
-                        className="text-stone-900 leading-relaxed text-xs sm:text-sm font-bold bg-amber-50/20 border border-dashed border-amber-250 focus:border-amber-400 focus:outline-none p-2 w-full rounded focus:bg-white h-24 font-serif italic resize-none"
-                        placeholder="Why we care details..."
-                      />
-                    ) : (
-                      <p className="text-slate-900 leading-relaxed text-xs sm:text-sm font-bold italic font-serif">
-                        {brief.segments.bigStory.whyItMatters}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <h4 className="text-[10px] font-bold uppercase text-[#8C6239] tracking-widest block border-l-2 border-[#B19470] pl-2">
-                      WHAT'S NEXT
-                    </h4>
-                    {isEditing ? (
-                      <textarea
-                        value={brief.segments.bigStory.whatHappensNext || ''}
-                        onChange={(e) => updateBigStory('whatHappensNext', e.target.value)}
-                        className="text-stone-700 leading-relaxed text-xs sm:text-sm font-medium bg-amber-50/20 border border-dashed border-amber-250 focus:border-amber-400 focus:outline-none p-2 w-full rounded focus:bg-white h-24 resize-none"
-                        placeholder="Expected outcomes timeline..."
-                      />
-                    ) : (
-                      <p className="text-slate-650 leading-relaxed text-xs sm:text-sm font-medium">
-                        {brief.segments.bigStory.whatHappensNext}
-                      </p>
-                    )}
-                  </div>
+              {/* Seamless vertical prose */}
+              <div className="space-y-4 text-stone-800 text-sm sm:text-base leading-relaxed">
+                <div>
+                  {isEditing ? (
+                    <textarea
+                      value={brief.segments.bigStory.whatHappened || ''}
+                      onChange={(e) => updateBigStory('whatHappened', e.target.value)}
+                      className="text-stone-700 leading-relaxed text-sm sm:text-[15px] font-medium bg-amber-50/20 border border-dashed border-amber-250 focus:border-amber-400 focus:outline-none p-3.5 w-full rounded focus:bg-white h-36 resize-none"
+                      placeholder="What happened news fact details..."
+                    />
+                  ) : (
+                    <p className="text-slate-755 font-normal leading-relaxed">
+                      {brief.segments.bigStory.whatHappened}
+                    </p>
+                  )}
                 </div>
 
-                {/* Social Perspective & Sources Checked */}
-                <div className="flex flex-col justify-between bg-stone-50/60 border border-stone-200/50 p-5 rounded-2xl gap-5">
-                  <div className="space-y-3">
-                    <span className="text-[9px] uppercase font-bold text-stone-500 tracking-widest flex items-center gap-1.5 border-b border-stone-200/50 pb-2">
-                      <MessageCircle className="w-3.5 h-3.5 text-[#B19470]" />
-                      Social & Reader Commentary
-                    </span>
-                    
+                {/* Grande italic highlight style */}
+                <div className="my-6 pl-5 border-l-4 border-[#B19470] bg-[#FAF9F6] py-3.5 px-4 rounded-r-2xl">
+                  <span className="text-[10px] uppercase tracking-widest font-extrabold text-[#8C6239] block mb-1">
+                    The Pulse & Significance
+                  </span>
+                  {isEditing ? (
+                    <textarea
+                      value={brief.segments.bigStory.whyItMatters || ''}
+                      onChange={(e) => updateBigStory('whyItMatters', e.target.value)}
+                      className="text-stone-900 leading-relaxed text-sm sm:text-base font-serif italic font-medium bg-amber-50/20 border border-dashed border-amber-250 focus:border-amber-400 focus:outline-none p-2 w-full rounded focus:bg-white h-24 resize-none"
+                      placeholder="Why it matters significance..."
+                    />
+                  ) : (
+                    <p className="text-[#3A3024] font-serif font-semibold text-base sm:text-lg italic leading-relaxed">
+                      "{brief.segments.bigStory.whyItMatters}"
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  {isEditing ? (
+                    <textarea
+                      value={brief.segments.bigStory.whatHappensNext || ''}
+                      onChange={(e) => updateBigStory('whatHappensNext', e.target.value)}
+                      className="text-stone-700 leading-relaxed text-sm font-medium bg-amber-50/20 border border-dashed border-amber-250 focus:border-amber-400 focus:outline-none p-3 w-full rounded focus:bg-white h-20 resize-none"
+                      placeholder="Next phase trigger..."
+                    />
+                  ) : (
+                    <div className="text-slate-705 text-sm sm:text-base leading-relaxed flex items-start gap-2">
+                      <span className="font-extrabold text-[#8C6239] text-xs uppercase tracking-widest bg-stone-100 px-2 py-1 rounded inline-block mt-0.5 whitespace-nowrap">
+                        What's next:
+                      </span>
+                      <span className="font-sans font-medium">{brief.segments.bigStory.whatHappensNext}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Vibe and source references checked */}
+                <div className="pt-4 border-t border-stone-150 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3.5 text-xs text-stone-500">
+                  <div className="italic font-medium flex items-center gap-1.5">
+                    <span className="text-stone-400 not-italic font-bold text-[10px] uppercase tracking-widest">SENTIMENT reaction:</span>
                     {isEditing ? (
-                      <textarea
+                      <input
+                        type="text"
                         value={brief.segments.bigStory.internetVibe || ''}
                         onChange={(e) => updateBigStory('internetVibe', e.target.value)}
-                        className="text-xs text-stone-700 leading-relaxed italic bg-white border border-dashed border-amber-250 focus:border-amber-400 focus:outline-none p-2 w-full rounded h-32 resize-none"
-                        placeholder="Social commentaries or regional comments vibe..."
+                        className="bg-amber-50/20 border-b border-dashed border-amber-250 focus:outline-none p-1 text-stone-700 text-xs rounded focus:bg-white"
+                        placeholder="Vibe commentary..."
                       />
                     ) : (
-                      <div className="bg-white p-4.5 rounded-xl border border-stone-100 shadow-sm">
-                        <p className="text-xs sm:text-sm text-stone-700 leading-relaxed italic font-medium">
-                          "{brief.segments.bigStory.internetVibe}"
-                        </p>
-                      </div>
+                      <span>"{brief.segments.bigStory.internetVibe}"</span>
                     )}
-                    
-                    <div className="flex items-center gap-1.5 pt-1 text-[9px] text-[#8C6239] font-bold uppercase tracking-wider">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#B19470]"></span>
-                      Reflecting Community Forums Sentiment
-                    </div>
                   </div>
 
-                  {/* Curated authorities references */}
-                  <div className="pt-3 border-t border-stone-200/50 flex flex-wrap gap-1 items-center text-[10px]">
-                    <span className="text-stone-400 font-bold uppercase text-[9px] tracking-wider">SOURCES:</span>
-                    {brief.segments.bigStory.sources && brief.segments.bigStory.sources.map((src, idx) => (
-                      <span key={idx} className="bg-white border border-stone-200 px-2.5 py-0.5 rounded text-stone-600 text-[10px] font-semibold">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-stone-400 font-semibold text-[10px] tracking-wide uppercase">SOURCES:</span>
+                    {brief.segments.bigStory.sources && brief.segments.bigStory.sources.map((src, i) => (
+                      <span key={i} className="bg-stone-50 border border-stone-200/60 px-2.5 py-0.5 rounded text-stone-600 font-bold text-[9px]">
                         {src}
                       </span>
                     ))}
                   </div>
                 </div>
-
               </div>
             </div>
           </div>
@@ -322,15 +303,15 @@ export default function ReaderPreview({ brief, onDeploy, isDeploying, onShareWha
 
         {/* Nigeria Stories */}
         {brief.segments.nigeria && brief.segments.nigeria.length > 0 && (
-          <div className="space-y-4 pt-2">
+          <div className="space-y-6 pt-4">
             <div className="flex items-center gap-3">
-              <span className="bg-stone-50 border border-stone-200/60 text-stone-800 text-[9px] font-bold px-3 py-0.5 rounded-full uppercase tracking-widest">
+              <span className="bg-stone-50 border border-stone-200/60 text-[#8C6239] text-[9.5px] font-extrabold px-3 py-1 rounded-full uppercase tracking-widest">
                 NIGERIAN COVERAGE
               </span>
-              <div className="h-[1px] bg-stone-100 flex-1"></div>
+              <div className="h-[1px] bg-stone-200/60 flex-1"></div>
             </div>
 
-            <div className="space-y-5">
+            <div className="divide-y divide-stone-100">
               {brief.segments.nigeria.map((seg, idx) => (
                 <SegmentCard 
                   key={idx} 
@@ -345,15 +326,15 @@ export default function ReaderPreview({ brief, onDeploy, isDeploying, onShareWha
 
         {/* African Stories */}
         {brief.segments.africa && brief.segments.africa.length > 0 && (
-          <div className="space-y-4 pt-2">
+          <div className="space-y-6 pt-4">
             <div className="flex items-center gap-3">
-              <span className="bg-stone-50 border border-stone-200/60 text-stone-800 text-[9px] font-bold px-3 py-0.5 rounded-full uppercase tracking-widest">
+              <span className="bg-stone-50 border border-stone-200/60 text-[#8C6239] text-[9.5px] font-extrabold px-3 py-1 rounded-full uppercase tracking-widest">
                 AFRICAN COVERAGE
               </span>
-              <div className="h-[1px] bg-stone-100 flex-1"></div>
+              <div className="h-[1px] bg-stone-200/60 flex-1"></div>
             </div>
 
-            <div className="space-y-5">
+            <div className="divide-y divide-stone-100">
               {brief.segments.africa.map((seg, idx) => (
                 <SegmentCard 
                   key={idx} 
@@ -368,15 +349,15 @@ export default function ReaderPreview({ brief, onDeploy, isDeploying, onShareWha
 
         {/* Global/World Stories */}
         {brief.segments.world && brief.segments.world.length > 0 && (
-          <div className="space-y-4 pt-2">
+          <div className="space-y-6 pt-4">
             <div className="flex items-center gap-3">
-              <span className="bg-stone-50 border border-stone-200/60 text-stone-800 text-[9px] font-bold px-3 py-0.5 rounded-full uppercase tracking-widest">
+              <span className="bg-stone-50 border border-stone-200/60 text-[#8C6239] text-[9.5px] font-extrabold px-3 py-1 rounded-full uppercase tracking-widest">
                 GLOBAL COVERAGE
               </span>
-              <div className="h-[1px] bg-stone-100 flex-1"></div>
+              <div className="h-[1px] bg-stone-200/60 flex-1"></div>
             </div>
 
-            <div className="space-y-5">
+            <div className="divide-y divide-stone-100">
               {brief.segments.world.map((seg, idx) => (
                 <SegmentCard 
                   key={idx} 
@@ -391,17 +372,17 @@ export default function ReaderPreview({ brief, onDeploy, isDeploying, onShareWha
 
         {/* Watchlist Section */}
         {brief.segments.watchlist && brief.segments.watchlist.length > 0 && (
-          <div className="space-y-4 pt-2">
+          <div className="space-y-6 pt-4">
             <div className="flex items-center gap-3">
-              <span className="bg-[#B19470]/10 text-[#8C6239] border border-[#B19470]/25 text-[9px] font-bold px-3.5 py-0.5 rounded-full uppercase tracking-widest">
-                TOPICS TO WATCH NEIGHBORHOOD
+              <span className="bg-[#B19470]/10 text-[#8C6239] border border-[#B19470]/25 text-[9.5px] font-extrabold px-3.5 py-1 rounded-full uppercase tracking-widest">
+                THE WATCHLIST & BRIEF NOTES
               </span>
-              <div className="h-[1px] bg-stone-100 flex-1"></div>
+              <div className="h-[1px] bg-stone-200/60 flex-1"></div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {brief.segments.watchlist.map((seg, idx) => (
-                <div key={idx} className="bg-stone-50/40 p-5 rounded-xl border border-stone-200/50 space-y-2.5 shadow-none transition-all duration-300">
+                <div key={idx} className="bg-stone-50/40 p-5 rounded-2xl border border-stone-200/60 space-y-3 shadow-none transition-all duration-300">
                   {isEditing ? (
                     <input
                       type="text"
@@ -425,12 +406,12 @@ export default function ReaderPreview({ brief, onDeploy, isDeploying, onShareWha
                       placeholder="Watchlist trend context..."
                     />
                   ) : (
-                    <p className="text-slate-650 text-xs sm:text-sm leading-relaxed font-medium pl-5">
+                    <p className="text-slate-655 text-xs sm:text-sm leading-relaxed font-normal pl-5">
                       {seg.whatHappened}
                     </p>
                   )}
 
-                  <p className="text-stone-850 font-semibold text-xs border-t border-stone-200/50 pt-2.5 flex items-center gap-1.5 pl-5">
+                  <p className="text-stone-855 font-semibold text-xs border-t border-stone-200/50 pt-2.5 flex items-center gap-2 pl-5">
                     <span className="text-[8px] font-bold text-[#8C6239] uppercase bg-[#B19470]/10 px-1.5 py-0.5 rounded border border-[#B19470]/20">Why:</span>
                     {isEditing ? (
                       <input
@@ -441,7 +422,7 @@ export default function ReaderPreview({ brief, onDeploy, isDeploying, onShareWha
                         placeholder="Why watch importance..."
                       />
                     ) : (
-                      <span>{seg.whyItMatters}</span>
+                      <span className="text-stone-700 italic">"{seg.whyItMatters}"</span>
                     )}
                   </p>
                 </div>
@@ -455,7 +436,7 @@ export default function ReaderPreview({ brief, onDeploy, isDeploying, onShareWha
   );
 }
 
-// Subcomponent SegmentCard
+// Subcomponent SegmentCard - Rendered in flowing vertical newsletter format
 interface SegmentCardProps {
   key?: any;
   segment: EditorialSegment;
@@ -465,83 +446,106 @@ interface SegmentCardProps {
 
 function SegmentCard({ segment, isEditing, onEdit }: SegmentCardProps) {
   return (
-    <div className="bg-white border border-stone-200/60 p-5 sm:p-7 rounded-2xl space-y-4 shadow-none hover:shadow-md transition-all duration-300">
-      
-      {isEditing ? (
-        <input
-          type="text"
-          value={segment.title || ''}
-          onChange={(e) => onEdit('title', e.target.value)}
-          className="text-base sm:text-lg font-bold font-serif text-stone-950 bg-amber-50/20 border-b border-dashed border-amber-250 focus:outline-none p-1 w-full rounded"
-          placeholder="Story title..."
-        />
-      ) : (
-        <h3 className="text-base sm:text-lg font-bold font-serif text-slate-900 leading-snug">
-          🔗 {segment.title}
-        </h3>
-      )}
+    <div className="py-6 sm:py-8 border-b border-stone-100 last:border-b-0 space-y-4">
+      {/* Category indicator / Title */}
+      <div className="space-y-1.5">
+        {isEditing ? (
+          <input
+            type="text"
+            value={segment.title || ''}
+            onChange={(e) => onEdit('title', e.target.value)}
+            className="text-lg sm:text-xl font-bold font-serif text-stone-950 bg-amber-50/20 border-b border-dashed border-amber-250 focus:outline-none p-1 w-full rounded focus:bg-white"
+            placeholder="Story title..."
+          />
+        ) : (
+          <h3 className="text-lg sm:text-xl font-bold font-serif text-slate-900 leading-snug hover:text-[#8C6239] transition-colors duration-150">
+            {segment.title}
+          </h3>
+        )}
+      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 pt-1 text-xs leading-relaxed">
-        <div className="space-y-1.5">
-          <span className="text-[10px] font-bold text-[#8C6239] tracking-widest block border-b border-stone-100 pb-1 uppercase">THE NEWS</span>
+      {/* Styled vertical newsletter body */}
+      <div className="space-y-3.5 text-stone-800 text-sm sm:text-[15px] leading-relaxed">
+        {/* Paragraph 1: The news details */}
+        <div>
           {isEditing ? (
             <textarea
               value={segment.whatHappened || ''}
               onChange={(e) => onEdit('whatHappened', e.target.value)}
-              className="text-stone-700 bg-amber-50/20 border border-dashed border-amber-250 focus:outline-none p-2 w-full h-24 resize-none rounded font-medium"
-              placeholder="What happened..."
+              className="text-stone-700 bg-amber-50/20 border border-dashed border-amber-250 focus:outline-none p-2 w-full h-24 resize-none rounded font-medium focus:bg-white text-sm"
+              placeholder="The news facts: what happened..."
             />
           ) : (
-            <p className="text-slate-650 font-medium leading-relaxed">{segment.whatHappened}</p>
+            <p className="font-sans text-slate-700 leading-relaxed font-normal">
+              {segment.whatHappened}
+            </p>
           )}
         </div>
-        <div className="space-y-1.5">
-          <span className="text-[10px] font-bold text-[#8C6239] tracking-widest block border-b border-stone-100 pb-1 uppercase">WHY IT MATTERS</span>
+
+        {/* Why it Matters highlight callout box */}
+        <div className="pl-4.5 border-l-3 border-[#B19470] bg-stone-50/40 py-2 px-3 rounded-r-xl my-2">
+          <span className="text-[10px] font-bold text-[#8C6239] tracking-widest block uppercase mb-1">
+            Why it matters
+          </span>
           {isEditing ? (
             <textarea
               value={segment.whyItMatters || ''}
               onChange={(e) => onEdit('whyItMatters', e.target.value)}
-              className="text-stone-950 bg-amber-50/20 border border-dashed border-amber-250 focus:outline-none p-2 w-full h-24 resize-none rounded font-bold"
-              placeholder="Why it matters..."
+              className="text-stone-900 bg-amber-50/20 border border-dashed border-amber-250 focus:outline-none p-2 w-full h-20 resize-none rounded font-serif italic text-sm focus:bg-white"
+              placeholder="Why it matters to our readers..."
             />
           ) : (
-            <p className="text-slate-900 font-bold leading-relaxed">{segment.whyItMatters}</p>
+            <p className="font-serif italic font-medium text-stone-900 leading-relaxed text-sm sm:text-[14px]">
+              "{segment.whyItMatters}"
+            </p>
           )}
         </div>
-        <div className="space-y-1.5">
-          <span className="text-[10px] font-bold text-[#8C6239] tracking-widest block border-b border-stone-100 pb-1 uppercase">NEXT PHASE</span>
-          {isEditing ? (
-            <textarea
-              value={segment.whatHappensNext || ''}
-              onChange={(e) => onEdit('whatHappensNext', e.target.value)}
-              className="text-stone-700 bg-amber-50/20 border border-dashed border-amber-250 focus:outline-none p-2 w-full h-24 resize-none rounded font-medium"
-              placeholder="What happens next..."
-            />
-          ) : (
-            <p className="text-slate-650 font-medium leading-relaxed">{segment.whatHappensNext}</p>
-          )}
-        </div>
-      </div>
 
-      <div className="pt-3.5 border-t border-stone-100 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 text-[10px] font-semibold text-stone-500">
-        <div className="italic">
-          <strong>Vibe:</strong> {isEditing ? (
+        {/* What's next timeline */}
+        <div className="text-xs sm:text-sm text-slate-600 flex items-start gap-1.5 pt-1">
+          <span className="font-bold text-[#8C6239] text-[10px] uppercase tracking-wider bg-stone-100 px-2 py-0.5 rounded flex-shrink-0 mt-0.5">
+            What's next:
+          </span>
+          {isEditing ? (
             <input
               type="text"
-              value={segment.internetVibe || ''}
-              onChange={(e) => onEdit('internetVibe', e.target.value)}
-              className="bg-amber-50/20 border-b border-dashed border-amber-250 focus:outline-none p-1 text-stone-800 text-[10px] font-medium"
-              placeholder="Vibe commentary..."
+              value={segment.whatHappensNext || ''}
+              onChange={(e) => onEdit('whatHappensNext', e.target.value)}
+              className="bg-amber-50/20 border-b border-dashed border-amber-250 focus:outline-none p-1 text-slate-700 text-xs w-full rounded focus:bg-white"
+              placeholder="Next steps or timeline..."
             />
           ) : (
-            <span>"{segment.internetVibe}"</span>
+            <span className="text-slate-650 font-medium">
+              {segment.whatHappensNext}
+            </span>
           )}
         </div>
-        <div className="flex items-center gap-1">
-          <span className="text-stone-400 font-bold uppercase text-[9px] tracking-wider">SOURCES:</span>
-          {segment.sources && segment.sources.map((src, i) => (
-            <span key={i} className="bg-stone-50 border border-stone-200 px-2 py-0.5 rounded text-stone-600 text-[9px] font-bold">{src}</span>
-          ))}
+
+        {/* Vibe commentary & authorities references row */}
+        <div className="pt-2 border-t border-stone-100 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 text-[11px] text-stone-500">
+          <div className="flex items-center gap-1.5 italic font-medium">
+            <span className="text-stone-400 not-italic uppercase tracking-widest text-[9px] font-bold">VIBE:</span>
+            {isEditing ? (
+              <input
+                type="text"
+                value={segment.internetVibe || ''}
+                onChange={(e) => onEdit('internetVibe', e.target.value)}
+                className="bg-amber-50/20 border-b border-dashed border-amber-250 focus:outline-none p-1 text-stone-700 text-[10px] w-full rounded focus:bg-white"
+                placeholder="Vibe reaction..."
+              />
+            ) : (
+              <span>"{segment.internetVibe}"</span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1 flex-wrap">
+            <span className="text-stone-400 font-bold uppercase text-[9px] tracking-widest">SOURCES:</span>
+            {segment.sources && segment.sources.map((src, i) => (
+              <span key={i} className="bg-stone-50 border border-stone-200/60 px-2 py-0.5 rounded text-stone-600 font-bold text-[9px]">
+                {src}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
     </div>

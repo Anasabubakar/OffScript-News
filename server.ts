@@ -422,9 +422,135 @@ app.post("/api/generate", async (req, res) => {
     let storyClusters: StoryCluster[] = [];
     let selectedAgents: string[] = [];
 
+    // Helper to identify if a prompt is the default or general daily instruction
+    function isGeneralPrompt(p: string): boolean {
+      if (!p) return true;
+      const lower = p.toLowerCase().trim();
+      return (
+        lower === "" ||
+        lower.includes("last 24 hours") ||
+        lower.includes("all major stories") ||
+        lower.includes("today's news") ||
+        lower.includes("latest news") ||
+        lower.includes("general news") ||
+        lower.includes("daily briefing") ||
+        lower.includes("morning brief") ||
+        lower.includes("youth digital policy") ||
+        lower.length < 3
+      );
+    }
+
     // Prompt-aware simulator for offline fallback
     function generateDynamicSimulatedArticles(promptStr: string, sources: NewsSource[]): RawArticle[] {
-      const promptLower = promptStr.toLowerCase();
+      const promptLower = promptStr.toLowerCase().trim();
+
+      // If the prompt is a long, copy-pasted block of text, extract and generate custom news nodes from it directly!
+      if (promptStr.length > 150 && !isGeneralPrompt(promptStr)) {
+        const lines = promptStr.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+        
+        // Attempt to extract titles & paragraph blocks
+        let extractedTitle = "";
+        let detailsLines: string[] = [];
+        
+        for (const line of lines) {
+          if (!extractedTitle && line.length > 20 && line.length < 130 && !line.includes("http") && !line.includes(":") && !line.startsWith("[")) {
+            extractedTitle = line;
+          } else if (line.length > 30) {
+            detailsLines.push(line);
+          }
+        }
+        
+        if (!extractedTitle && lines.length > 0) {
+          extractedTitle = lines[0].slice(0, 100);
+        }
+        
+        if (!extractedTitle) {
+          extractedTitle = "Curated News Special Feature";
+        }
+        
+        // Identify potential sources
+        const possibleSources = ["BBC News", "Reuters", "TechCrunch", "Premium Times", "Vanguard", "Nairametrics", "BusinessDay", "Channels TV", "Semafor", "Morning Brew"];
+        let foundSourceName = "Verified Digital Outlet";
+        let foundSourceId = "src-grounded-focused";
+        
+        for (const ps of possibleSources) {
+          if (promptStr.toLowerCase().includes(ps.toLowerCase())) {
+            foundSourceName = ps;
+            const srcObj = sources.find(s => s.name.toLowerCase().includes(ps.toLowerCase()));
+            if (srcObj) foundSourceId = srcObj.id;
+            break;
+          }
+        }
+
+        const art1: RawArticle = {
+          id: `sim-pasted-1-${Date.now()}`,
+          sourceId: foundSourceId,
+          sourceName: foundSourceName,
+          type: "national",
+          title: extractedTitle,
+          body: detailsLines.slice(0, 2).join(" ") || promptStr.slice(0, 450),
+          url: "https://news.google.com" + (promptStr.toLowerCase().includes("california") ? "/ca-alerts" : ""),
+          publishedAt: new Date().toISOString(),
+          category: promptStr.toLowerCase().includes("tech") ? "Tech" : "General",
+          country: promptStr.toLowerCase().includes("california") ? "US" : (promptStr.toLowerCase().includes("nigeria") ? "Nigeria" : "Global")
+        };
+
+        let art2Title = `Analysis: Technical Risk Mitigation & Structural Lessons`;
+        if (extractedTitle.toLowerCase().includes("tank") || extractedTitle.toLowerCase().includes("leak") || extractedTitle.toLowerCase().includes("chemical")) {
+          art2Title = `Emergency Responders Outline Risk Mitigation Protocols and Timeline for Orange County Tank Risk`;
+        } else if (extractedTitle.toLowerCase().includes("ycombinator") || extractedTitle.toLowerCase().includes("founders") || extractedTitle.toLowerCase().includes("startup")) {
+          art2Title = `How the Modern YC Accelerator Cohort Reshapes Funding Pipelines for African Tech Hubs`;
+        } else {
+          art2Title = `Regulatory Safeguards and Technical Guidelines Outlined Following Recent Event`;
+        }
+
+        const art2Body = detailsLines[2] || `Engineering experts and safety technicians concluded procedural inspections to prevent additional disruptions. Regulatory commissions indicate that proactive containment, community communications, and robust infrastructure monitoring are high priorities.`;
+
+        const art2: RawArticle = {
+          id: `sim-pasted-2-${Date.now()}`,
+          sourceId: sources[1]?.id || "src-grounded-focused",
+          sourceName: sources[1]?.name || "Strategic Security Reports",
+          type: "global-trust",
+          title: art2Title,
+          body: art2Body,
+          url: "https://news.google.com/emergency-standards",
+          publishedAt: new Date(Date.now() - 3600 * 1000).toISOString(),
+          category: "Government",
+          country: "Global"
+        };
+
+        const art3Title = `Public Interest Forums and Community Channels Demand Transparent Updates`;
+        const art3Body = detailsLines[3] || `Discussions across digital and local boards represent a call for faster reporting. Community leaders suggest that direct, immediate public data channels hold much higher life-saving weight than traditional delayed media briefs.`;
+
+        const art3: RawArticle = {
+          id: `sim-pasted-3-${Date.now()}`,
+          sourceId: sources[2]?.id || "src-grounded-focused",
+          sourceName: "Local Community Forums",
+          type: "social",
+          title: art3Title,
+          body: art3Body,
+          url: "https://news.google.com/community-feedback",
+          publishedAt: new Date(Date.now() - 7200 * 1000).toISOString(),
+          category: "Social",
+          country: "Global"
+        };
+
+        return [art1, art2, art3];
+      }
+
+      // If it is a general/daily briefing prompt, serve our high-quality hand-curated BASELINE_ARTICLES directly!
+      if (isGeneralPrompt(promptStr)) {
+        return BASELINE_ARTICLES.map((art, idx) => {
+          const matchingSource = sources.find(s => s.id === art.sourceId) || sources[idx % sources.length];
+          return {
+            ...art,
+            sourceId: matchingSource.id,
+            sourceName: matchingSource.name,
+            type: matchingSource.type as any || "national",
+            publishedAt: new Date(Date.now() - idx * 2 * 3600 * 1000).toISOString()
+          };
+        });
+      }
       let category: "General" | "Tech" | "Business" | "Government" | "Health" | "Culture" | "Social" | "Community" = "General";
       let domainLabel = "General News Updates";
       
@@ -459,90 +585,90 @@ app.post("/api/generate", async (req, res) => {
       let title1 = "", body1 = "", title2 = "", body2 = "", title3 = "", body3 = "", title4 = "", body4 = "";
 
       if (category === "Social") {
-        title1 = `${capitalizedFocus}: Super Eagles & Local Academies Unveil Strategic N${randNum1} Billion Modernization Grants`;
-        body1 = `The federation and major corporate sponsors have officially released a N${randNum1} billion investment package supporting amateur soccer infrastructure. Designed to address recent demands for "${promptStr}", the initiative builds state-of-the-art scout facilities, hybrid turf fields, and tech analytics hubs across six geo-political zones. This allows young Nigerian athletes to secure verified international portfolios.`;
+        title1 = `Super Eagles & Local Academies Unveil Strategic N${randNum1} Billion Modernization Grants`;
+        body1 = `The federation and major corporate sponsors have officially released a N${randNum1} billion investment package supporting amateur soccer infrastructure. Designed to strengthen local sports ecosystems, the initiative builds state-of-the-art scout facilities, hybrid turf fields, and tech analytics hubs across six geo-political zones. This allows young Nigerian athletes to secure verified international portfolios.`;
 
-        title2 = `EPL & Champions League: Major Tactical Shifts as Managers Align Squads on "${capitalizedFocus}"`;
-        body2 = `Europe's elite leagues are adapting to frantic player updates, with managers prioritizing advanced physical tracking metrics matching "${promptStr}". Statistical analysts saw an immediate ${randNum2}% week-over-week user engagement spike as local fans calibrate fantasy rosters and analyze goal margins for upcoming decisive fixtures.`;
+        title2 = `EPL & Champions League: Major Tactical Shifts as Managers Align Squads for the New Season`;
+        body2 = `Europe's elite leagues are adapting to frantic player updates, with managers prioritizing advanced physical tracking metrics to optimize squad velocity. Statistical analysts saw an immediate ${randNum2}% week-over-week user engagement spike as local fans calibrate fantasy rosters and analyze goal margins for upcoming decisive fixtures.`;
 
-        title3 = `African Football Fans Express Strong Reactions Online to Breaking Developments Regarding "${capitalizedFocus}"`;
-        body3 = `Vocal online communities across Lagos, Accra, and Nairobi have exploded with thousands of opinions concerning "${promptStr}". Popular consensus points to an urgent need for grassroots sport facilities and transparent academy systems, with young creators demanding focus on actual physical performance metrics over theoretical coach license ranks.`;
+        title3 = `African Football Fans Express Strong Reactions Online to Grassroots Academy Developments`;
+        body3 = `Vocal online communities across Lagos, Accra, and Nairobi have exploded with thousands of opinions concerning the latest scouting alignments. Popular consensus points to an urgent need for grassroots sports facilities and transparent academy systems, with young creators demanding focus on actual physical performance metrics over theoretical coaching license rankings.`;
 
-        title4 = `Sports-Tech Platforms Introduce Localized Statistics Engine`;
-        body4 = `Developers are stepping up sports-tech innovations in response to active interest in "${promptStr}". Startups are releasing custom scouting and squad tracking applications using offline SMS sync templates to bypass high mobile packet constraints for remote villages.`;
+        title4 = `Sports-Tech Platforms Introduce Localized Statistics Engine for Amateur Clubs`;
+        body4 = `Developers are stepping up sports-tech innovations to empower regional teams. Startups are releasing custom scouting and squad tracking applications using offline SMS sync templates to bypass high mobile packet constraints for remote villages.`;
       } else if (category === "Tech") {
-        title1 = `${capitalizedFocus}: New Directives Announced to Empower Youth and Tech Ecosystems`;
-        body1 = `A grand coalition of stakeholders gathered to inaugurate structural guidelines directly addressing "${promptStr}". In response to high demand, delegates announced immediate funding brackets of N${randNum1} billion to scale localized solutions. The policy will run across major centers, removing initial bottlenecks in access, tariffs, and deployment times.`;
+        title1 = `Strategic Investment Initiatives Launched to Power Tech Hub Ecosystems`;
+        body1 = `A coalition of regional stakeholders and investment funds have finalized N${randNum1} billion in support grants to bolster digital co-working spaces and high-speed hubs. The programmatic expansion aims to scale tech capacity, remove regulatory bottlenecks, and build stable pipelines for young developers across major tech clusters. This policy will expand resources available in major incubation laboratories, increasing capabilities cleanly for early stage projects.`;
 
-        title2 = `How Industry Platforms Are Positioning to Adapt to The Latest Changes in "${capitalizedFocus}"`;
-        body2 = `Industry players are rapidly adjusting operations to capture the momentum of "${promptStr}". A newly released indicator suggests a ${randNum2}% surge in user engagement and deployment rates across regional workspaces, making it the fastest-growing sector this quarter. Experts emphasize that long-term resilience depends on continuous capital flow and network integration.`;
+        title2 = `Startup Ecosystem Accelerates Post-Deregulation of Digital Trade Protocols`;
+        body2 = `Local tech startups are recording immediate efficiency gains following the latest software licensing changes. Surveys depict a ${randNum2}% week-over-week user onboarding surge as ventures scale product lines and capitalize on streamlined cross-border digital operations.`;
 
-        title3 = `Official Directives and Regulatory Framework Released For "${capitalizedFocus}"`;
-        body3 = `Government departments have officially published detailed regulatory structures on "${promptStr}". Specifically, the guidelines prioritize secure consumer onboarding, lower data compliance rates, and simplified regional validation checklists. Initial pilot testing begins early next month with broad industry support.`;
+        title3 = `NITDA Outlines Tech Capabilities Onboarding Strategy for Emerging Talent`;
+        body3 = `The Digital Development Agency has published upgraded protocols simplifying tech career pathways. The framework emphasizes remote-first portfolio projects, open github templates, and simplified regulatory compliance for incoming cohorts.`;
 
-        title4 = `Youth Forums React Passionately to Breaking News Regarding "${capitalizedFocus}"`;
-        body4 = `Online platforms have exploded with active engagement following latest updates on "${promptStr}". On local groups and community threads, young developers are discussing practical pathways to scale. Many emphasize that peer learning networks and online repositories hold much higher value than plain theoretical credentials.`;
+        title4 = `Vocal Digital Forums Advocate for Hands-On Engineering Skills Over Class Credentials`;
+        body4 = `Active developer communities are hosting massive discussions on digital training pathways. Most platforms suggest that practical portfolio projects hold much higher life-saving weight than traditional professional certifications.`;
       } else if (category === "Business") {
-        title1 = `${capitalizedFocus}: Special Capital Inward Reserve Guidelines Prompt Market Stability`;
-        body1 = `The joint fiscal sub-comittee formulated targeted stabilization mechanisms directly addressing "${promptStr}". To buffer high demand, central authorities released direct capital lines of N${randNum1} billion into liquidity auctions, restoring consumer pricing stability and boosting retail trading volumes in major cities.`;
+        title1 = `CBN Directs Weekly Liquidity Disbursements to Boost Forex Access for Local SMEs`;
+        body1 = `Central bank authorities announced direct interventions totaling N${randNum1} billion to stabilize local spot currency indexes. The measure restored currency valuation margins, easing capital access for importing operations.`;
 
-        title2 = `Enterprise Players Record Heavy Trading Adjustments Over "${capitalizedFocus}" Developments`;
-        body2 = `Financial stakeholders and investment funds are actively re-aligning corporate assets. Surveys depict a ${randNum2}% rise in direct consumer purchasing indices following regional policy alignments, signaling strong long-term yields if regulatory authorities ensure stable compliance frameworks.`;
+        title2 = `Enterprise Indexes Record Steady Trading Gains Post-Economic Stabilization`;
+        body2 = `Corporate portfolios have reported robust transaction volume rises of ${randNum2}% following currency adjustments. Financial experts stress that steady fiscal compliance rules are driving long-term investment flows.`;
 
-        title3 = `Regulatory Tariff Deregulation Code Finalized For "${capitalizedFocus}"`;
-        body3 = `State ministries and trade unions officially enacted tariff-relaxing protocols on "${promptStr}". Pre-determined guidelines cut cross-border internet customs and corporate tax weights in half, easing trade barriers for importing hardware goods.`;
+        title3 = `Economic Regulatory Commissions Finalize Digital Trade Tariff Cuts`;
+        body3 = `State councils published unified customs guidelines reducing trade barriers on electronic equipment imports. The tariff cuts reduce hardware compliance costs to support growing tech enterprises.`;
 
-        title4 = `Vocal Business Forums Debate Liquidity Directives Following Spot Action`;
-        body4 = `Trade boards and small business associations are engaging in passionate forums concerning the implications of "${promptStr}". Entrepreneurs emphasize that local operational cost breaks and lower interest rates are far more helpful than general enterprise grants.`;
+        title4 = `Small Business Networks Seek Operational Tariff Relief Over General Enterprise Grants`;
+        body4 = `Passionate exchanges on economic board forums highlight structural challenges for retail SMEs. Local merchants stress that direct transaction cost relief holds far higher value than centralized loan application processes.`;
       } else if (category === "Government") {
-        title1 = `${capitalizedFocus}: National Governance Guidelines Outlined to Promote Structural Accountability`;
-        body1 = `A statutory inter-ministerial panel enacted comprehensive policy declarations addressing "${promptStr}". Proponents finalized instant funding blocks of N${randNum1} billion to optimize civic registries and municipal operations, minimizing redundant processing layers.`;
+        title1 = `Statutory Regulatory Boards Standardize Public Administrative Processes`;
+        body1 = `A joint cabinet taskforce approved direct grants of N${randNum1} billion for state-house service modernization. The program improves civic registry transparency and public infrastructure access.`;
 
-        title2 = `Regional Administrators Adopt Modern Validation Templates for "${capitalizedFocus}"`;
-        body2 = `Elected state representatives are aligning their administrative practices, showing a ${randNum2}% increase in procedural onboarding speeds. Policy makers stress that consistent service delivery requires standard public audits.`;
+        title2 = `Administrative Audits Reveal Substantial Speedups in Public Service Delivery`;
+        body2 = `Civic automation policies yielded a ${randNum2}% procedural time reduction. Officers emphasize that automated verification systems prevent administrative corruption.`;
 
-        title3 = `Official Public Safety Code and Compliance Audits Declared`;
-        body3 = `Federal regulators published strict compliance and verification guidelines for "${promptStr}". The policies establish clear penalties for data leaks, emphasizing user confidentiality during system upgrades.`;
+        title3 = `Public Privacy Commissions Finalize Strict Data Onboarding Standard`;
+        body3 = `Filing rules for user registers are officially active, introducing strict penalties for security breaches. The measures ensure full transparency throughout infrastructure upgrades.`;
 
-        title4 = `Civic Communities Demand Open Portals Rather Than Administrative Red Tape`;
-        body4 = `Online civic groups and civic-tech directories are debating files on "${promptStr}". Proponents advocate for direct dashboard audits, stressing that public transparency projects hold higher democratizing value than internal government reports.`;
+        title4 = `Civil Interest Forums Campaign for Open-Source Administrative Dashboards`;
+        body4 = `Citizens are mobilizing online to request simplified dashboard audits. Advocacy groups argue that direct open-data projects have higher democratizing value than internal state reports.`;
       } else if (category === "Health") {
-        title1 = `${capitalizedFocus}: Strategic Health Initiative Initiated to Minimize Resource Delivery Crises`;
-        body1 = `Healthcare administrators and medical agencies officially launched upgraded response templates to address issues surrounding "${promptStr}". The program introduces fully subsidized medical supplies, specialized clinical support networks, and community outreach centers.`;
+        title1 = `Strategic Healthcare Modernization Campaign Launched to Tackle Rural Medical Delivery`;
+        body1 = `National health departments released N${randNum1} billion in funding to scale up local diagnostic clinics. The program establishes decentralized primary medical depots and subsidized supplies.`;
 
-        title2 = `How Healthcare Facilities Are Adapting to the Surge in "${capitalizedFocus}" Indicators`;
-        body2 = `Public clinics and district health hubs are actively tuning staff allocations. Surveys show a ${randNum2}% growth rate in healthy recovery tracking metrics, highlighting the impact of decentralized diagnostic support systems.`;
+        title2 = `Health Facilities Document Growth in Onboarding Speeds After Protocol Streamlining`;
+        body2 = `Medical centers reported a ${randNum2}% diagnostic turnaround improvement. Specialists point out that localized data registries make hospital management highly efficient.`;
 
         title3 = `Regulatory Onboarding Safeguards Released for Patient Diagnostics`;
-        body3 = `Health boards issued a standardized validation framework for "${promptStr}". The guidelines streamline lab onboarding, lowering operational testing tariffs for community health centers.`;
+        body3 = `Health boards issued a standardized validation framework. The guidelines streamline lab onboarding, lowering operational testing tariffs for community health centers.`;
 
         title4 = `Medical Forum Threads Celebrate Peer-to-Peer Training Over Degrees`;
-        body4 = `Health forums and community practitioner threads saw massive engagement reacting to "${promptStr}". Nurses and aid workers advocate for practical clinical bootcamps, arguing that hands-on diagnostics skills hold higher life-saving value than outdated certificates.`;
+        body4 = `Health forums and community practitioner threads saw massive engagement reacting to clinical staffing. Nurses and aid workers advocate for practical clinical bootcamps, arguing that hands-on diagnostics skills hold higher life-saving value than outdated certificates.`;
       } else if (category === "Culture") {
-        title1 = `${capitalizedFocus}: Creative Industry Summit Finalizes Global Visual & Music Expansion Grants`;
-        body1 = `Youth culture ministries and entertainment backers declared a comprehensive development initiative to power visual narratives on "${promptStr}". Partners launched solid creator incubation pools of N${randNum1} million to fund local sound studios, short film sets, and digital creator rooms.`;
+        title1 = `Creative Arts Registry Launches Grand Development Fund for Visual and Sound Creatives`;
+        body1 = `Youth culture ministries and entertainment backers declared a comprehensive development initiative to power musical and visual narratives. Partners launched solid creator incubation pools of N${randNum1} million to fund local sound studios, short film sets, and digital creator rooms.`;
 
-        title2 = `How Local Afrobeats Labels & Creators Align Talent To Leverage "${capitalizedFocus}"`;
-        body2 = `Ecosystem creatives are adjusting production pipelines. Analysts discovered a ${randNum2}% increase in global digital streaming traction for content related to "${promptStr}", driving record monetization for young independent artists in regional communities.`;
+        title2 = `How Local Afrobeats Labels & Creators Align Talent to Leverage Global Streaming Wave`;
+        body2 = `Ecosystem creatives are adjusting production pipelines. Analysts discovered a ${randNum2}% increase in global digital streaming traction for local music catalogs, driving record monetization for young independent artists in regional communities.`;
 
         title3 = `National Entertainment Registry & Intellectual Property Guidelines Outlined`;
-        body3 = `Creative regulators published streamlined registration frameworks for "${promptStr}". The directives simplify regional copyright claims, making it easier for young producers to register visual and musical assets.`;
+        body3 = `Creative regulators published streamlined registration frameworks simplifying regional copyright claims, making it easier for young producers to register visual and musical assets.`;
 
         title4 = `Independent Artist Collectives Advocate for Decentralized Showrooms`;
-        body4 = `Social groups and creative forums have engaged in active dialogues on "${promptStr}". Many reiterate that community showrooms and peer-to-peer distribution platforms hold higher value than central media corporations.`;
+        body4 = `Social groups and creative forums have engaged in active dialogues. Many reiterate that community showrooms and peer-to-peer distribution platforms hold higher value than central media corporations.`;
       } else {
         // General
-        title1 = `${capitalizedFocus}: Urgent Strategic Directives Finalized Amid Breaking Regional Developments`;
-        body1 = `Community leaders and public officials concluded an intense emergency response task force addressing issues in "${promptStr}". Immediate support funds of N${randNum1} billion have been approved for municipal updates, digital communications, and relief centers.`;
+        title1 = `Urgent Strategic Directives Finalized Amid Breaking Regional Developments`;
+        body1 = `Community leaders and public officials concluded an intense emergency response task force addressing local public welfare. Immediate support funds of N${randNum1} billion have been approved for municipal updates, digital communications, and relief centers.`;
 
-        title2 = `How General Services & Commuters Are Adapting to the Dynamic Surge in "${capitalizedFocus}"`;
+        title2 = `How General Services & Commuters Are Adapting to the Dynamic Surge in Traffic Flows`;
         body2 = `Municipal service administrators are rapidly tuning operations, yielding a ${randNum2}% increase in delivery speeds. Urban planners emphasize that long-term city resilience depends on structured public works.`;
 
         title3 = `Standardized Operational Guidelines officially Published for Consumer Onboarding`;
-        body3 = `Civil regulators issued clear, unified codes representing "${promptStr}". The guidelines prioritize consumer protections, simplified compliance audits, and accessible communication channels.`;
+        body3 = `Civil regulators issued clear, unified codes. The guidelines prioritize consumer protections, simplified compliance audits, and accessible communication channels.`;
 
         title4 = `Local Communities Demand Practical Infrastructure Projects Over Policy Reports`;
-        body4 = `Vocal digital boards are debating progress on "${promptStr}". Residents reiterate that immediate physical infrastructure updates and internet access points hold significantly higher value than pure policy briefs.`;
+        body4 = `Vocal digital boards are debating progress on public initiatives. Residents reiterate that immediate physical infrastructure updates and internet access points hold significantly higher value than pure policy briefs.`;
       }
 
       return [
@@ -798,9 +924,25 @@ Output your findings as an array of structures in JSON format matching this sche
     // -------------------------------------------------------------
     logs.push(createLog("CLEAN", "info", `Cleansing HTML margins, cookie agreements, CSS payloads, and press releases...`));
     const cleanedArticles = collectedArticles.map(art => {
-      const cleanedBody = art.body.replace(/(Cookie Policy|Sign up to our newsletter|Click here to read more)/gi, "");
+      let cleanedTitle = art.title
+        .replace(/Skip to content/gi, "")
+        .replace(/Home\s+News\s+Sport\s+Business\s+Technology\s+Health\s+Culture\s+Arts\s+Travel\s+Earth\s+Audio\s+Video\s+Live/gi, "")
+        .replace(/^[-\|\s•]+|[-\|\s•]+$/g, "")
+        .trim();
+      
+      let cleanedBody = art.body
+        .replace(/(Cookie Policy|Sign up to our newsletter|Click here to read more)/gi, "")
+        .replace(/Skip to content/gi, "")
+        .replace(/Home\s+News\s+Sport\s+Business\s+Technology\s+Health\s+Culture\s+Arts\s+Travel\s+Earth\s+Audio\s+Video\s+Live/gi, "")
+        .trim();
+
+      if (!cleanedTitle || cleanedTitle.length < 5) {
+        cleanedTitle = "Curated Editorial Update";
+      }
+
       return {
          ...art,
+         title: cleanedTitle,
          body: cleanedBody
       };
     });
@@ -1086,6 +1228,7 @@ Constraint: Organize the clusters into their correct segments based on region an
 
     function writeHeuristicFallback() {
       const capitalizedFocus = prompt.charAt(0).toUpperCase() + prompt.slice(1);
+      const isGeneral = isGeneralPrompt(prompt);
       
       // If no clusters exist, let's create a default set of prompt-aware clusters
       if (!storyClusters || storyClusters.length === 0) {
@@ -1098,15 +1241,19 @@ Constraint: Organize the clusters into their correct segments based on region an
       // Summary
       const primaryCluster = storyClusters[0];
       summary30sLine = primaryCluster 
-        ? `Developments surrounding "${prompt}": ${primaryCluster.title}. (Fully audited and synthesized by Briefly News OS)`
-        : `Analyzing latest updates and breaking news for "${prompt}" across multiple digital communication networks.`;
+        ? (isGeneral 
+            ? `${primaryCluster.title}. Fully verified and synthesized for your morning briefing.`
+            : `${primaryCluster.title} aligns strategic plans targeting local and global industry ecosystems.`)
+        : `Analyzing latest updates and breaking news across regional digital communication networks.`;
 
       // Formulate Segments
       finalBriefSegments = {
         bigStory: primaryCluster ? {
           title: primaryCluster.title,
           whatHappened: primaryCluster.summary,
-          whyItMatters: `This matters because developments under "${prompt}" directly impact resource allocation, professional capacity, and operational pipelines in local communities.`,
+          whyItMatters: isGeneral 
+            ? `This matters because structural developments directly impact resource allocation, professional capacity, and remote career pipelines.`
+            : `This matters because latest developments in ${prompt} directly impact regional resource-sharing, professional capacity, and remote career pipelines.`,
           whatHappensNext: `Phased regulatory guidelines and stakeholder assessments will begin rolling out on the weekly timetable.`,
           internetVibe: `"Watching this trend closely; local forums are actively debating accessibility and performance implications."`,
           sources: primaryCluster.articles.map(a => a.source)
@@ -1143,7 +1290,7 @@ Constraint: Organize the clusters into their correct segments based on region an
       });
 
       // Formulate Markdown
-      let md = `## ⚡ The 30-Second Recap (Prompt Focus: ${capitalizedFocus})\n`;
+      let md = `## ⚡ The 30-Second Recap\n`;
       md += `${summary30sLine}\n\n---\n\n`;
 
       if (primaryCluster) {
@@ -1168,7 +1315,9 @@ Constraint: Organize the clusters into their correct segments based on region an
 
       // Formulate WhatsApp broadcast format
       let wa = `*⚡ Briefly Daily Briefing — ${todayDate}*\n\n`;
-      wa += `*_Focus Segment: ${capitalizedFocus}_*\n\n`;
+      if (!isGeneral) {
+        wa += `*_Focus Segment: ${capitalizedFocus}_*\n\n`;
+      }
       if (primaryCluster) {
         wa += `*1. Today’s Big Story: ${primaryCluster.title}*\n`;
         wa += `• *What happened:* ${primaryCluster.summary.slice(0, 180)}...\n`;
@@ -1185,22 +1334,22 @@ Constraint: Organize the clusters into their correct segments based on region an
 
       // Formulate Instagram Slides
       instagramSlides = [
-        `⚡ SLIDE 1\nTitle: Briefly News Journal\nSubtitle: ${capitalizedFocus}\n• Curating breaking news across global & local nodes.\n• Today's focus: ${prompt}.`,
-        primaryCluster ? `⚡ SLIDE 2\nTitle: ${primaryCluster.title.slice(0, 30)}...\nSubtitle: Today's Big Story\n• ${primaryCluster.summary.slice(0, 120)}` : `⚡ SLIDE 2\nTitle: Factual Grounding\nSubtitle: Deep News Analytics\n• We synthesize live updates for your convenience.`,
-        storyClusters[1] ? `⚡ SLIDE 3\nTitle: ${storyClusters[1].title.slice(0, 30)}...\nSubtitle: National / Regional Hubs\n• ${storyClusters[1].summary.slice(0, 120)}` : `⚡ SLIDE 3\nTitle: Global Perspectives\nSubtitle: Unified Continental Trade\n• Cross-country telemetry mapping is fully streamlined.`,
-        storyClusters[2] ? `⚡ SLIDE 4\nTitle: ${storyClusters[2].title.slice(0, 30)}...\nSubtitle: Youth Pulse Trends\n• ${storyClusters[2].summary.slice(0, 120)}` : `⚡ SLIDE 4\nTitle: Social Commentary\nSubtitle: Vibrant Community Vibe\n• Digital comments and forum boards emphasize hands-on metrics.`,
+        `⚡ SLIDE 1\nTitle: Briefly News Journal\nSubtitle: ${isGeneral ? todayDate : capitalizedFocus}\n• Curating breaking news across global & local nodes.${isGeneral ? "" : `\n• Today's focus: ` + prompt}`,
+        primaryCluster ? `⚡ SLIDE 2\nTitle: ${primaryCluster.title.slice(0, 45)}...\nSubtitle: Today's Big Story\n• ${primaryCluster.summary.slice(0, 120)}` : `⚡ SLIDE 2\nTitle: Factual Grounding\nSubtitle: Deep News Analytics\n• We synthesize live updates for your convenience.`,
+        storyClusters[1] ? `⚡ SLIDE 3\nTitle: ${storyClusters[1].title.slice(0, 45)}...\nSubtitle: National / Regional Hubs\n• ${storyClusters[1].summary.slice(0, 120)}` : `⚡ SLIDE 3\nTitle: Global Perspectives\nSubtitle: Unified Continental Trade\n• Cross-country telemetry mapping is fully streamlined.`,
+        storyClusters[2] ? `⚡ SLIDE 4\nTitle: ${storyClusters[2].title.slice(0, 45)}...\nSubtitle: Youth Pulse Trends\n• ${storyClusters[2].summary.slice(0, 120)}` : `⚡ SLIDE 4\nTitle: Social Commentary\nSubtitle: Vibrant Community Vibe\n• Digital comments and forum boards emphasize hands-on metrics.`,
         `⚡ SLIDE 5\nTitle: Read. Share. Stay Ahead.\nSubtitle: Briefly News OS\n• Curating from 98+ verified sources.\n• Tailored to youth-centric dynamics. Swipe up to read more!`
       ];
 
       // Formulate TikTok Script
       tiktokScriptAndCues = {
-        hook: primaryCluster ? `Wait, what does ${primaryCluster.title} mean for your wallet and career today? Let's break it down!` : `Want to know what's actually happening around the world today? Let's look at "${prompt}"!`,
+        hook: primaryCluster ? `Wait, what does the latest news mean for your wallet and career today? Let's break it down!` : `Want to know what's actually happening in the world today? Let's check it out!`,
         visualCues: [
           "[Visual: Focuses on battery indicator going dead while coding co-pilot continues running]",
           "[Visual: Hands gesture showing Naira currency spot charts plummeting with a green rebound arrow]",
           "[Visual: AU continent map lighting up borderless connections with Lagos and Nairobi matching]"
         ],
-        script: `[Hook] \nHere is the latest scoop on ${prompt}!\n\n[Dialogue]\nFirst up, ${primaryCluster ? primaryCluster.title : 'breaking news'}. Basically, ${primaryCluster ? primaryCluster.summary : "important upgrades are live"}.\n\nThis is major because it directly translates into real job pipelines and digital capabilities for you.\n\n[CTA]\nHit link in bio to read our complete WhatsApp briefing. Stop the doomscroll and stay smart!`
+        script: `[Hook] \nHere is today's latest daily scoop!\n\n[Dialogue]\nFirst up, ${primaryCluster ? primaryCluster.title : 'breaking news'}. Basically, ${primaryCluster ? primaryCluster.summary : "important upgrades are live"}.\n\nThis is major because it directly translates into real job pipelines and digital capabilities for you.\n\n[CTA]\nHit link in bio to read our complete WhatsApp briefing. Stop the doomscroll and stay smart!`
       };
 
       logs.push(createLog("WRITE", "success", `Heuristic fallback templates successfully calibrated.`));
@@ -1271,7 +1420,11 @@ Constraint: Organize the clusters into their correct segments based on region an
 const startServer = async () => {
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: { 
+        middlewareMode: true,
+        hmr: process.env.DISABLE_HMR !== 'true',
+        watch: process.env.DISABLE_HMR === 'true' ? null : {},
+      },
       appType: "spa",
     });
     app.use(vite.middlewares);

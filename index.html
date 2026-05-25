@@ -4,6 +4,29 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Briefly News OS — Curated Intelligence Layer</title>
+    <script>
+      // Gracefully prevent benign local development HMR/WebSocket networking alerts from bubbling up
+      window.addEventListener('unhandledrejection', function(event) {
+        if (event.reason && (
+          event.reason.message === 'WebSocket closed without opened.' ||
+          (typeof event.reason.message === 'string' && event.reason.message.includes('[vite]')) ||
+          (typeof event.reason.stack === 'string' && event.reason.stack.includes('vite'))
+        )) {
+          event.stopPropagation();
+          event.preventDefault();
+        }
+      });
+      window.addEventListener('error', function(event) {
+        if (event.message && (
+          event.message.includes('WebSocket') || 
+          event.message.includes('vite') ||
+          event.message.includes('HMR')
+        )) {
+          event.stopPropagation();
+          event.preventDefault();
+        }
+      }, true);
+    </script>
   </head>
   <body>
     <div id="root"></div>
