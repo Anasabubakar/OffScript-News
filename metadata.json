@@ -1,0 +1,6 @@
+{
+  "name": "Briefly News OS",
+  "description": "A news intelligence and translation layer for young people. Automates full-stack story ingestion, cleaning, clustering, verification, and youth-focused editorial generation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
